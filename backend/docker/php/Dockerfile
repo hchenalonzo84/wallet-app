@@ -7,11 +7,13 @@ RUN apt-get update \
     git \
     unzip \
     libicu-dev \
+    libonig-dev \
     libpq-dev \
     libzip-dev \
     && docker-php-ext-install \
     bcmath \
     intl \
+    mbstring \
     opcache \
     pcntl \
     pdo_pgsql \
