@@ -1,0 +1,51 @@
+name: wallet-app
+
+services:
+  database:
+    image: postgres:18.4-alpine3.24
+    container_name: wallet-app-database
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      - ${POSTGRES_DATA_DIR}:/var/lib/postgresql
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    restart: unless-stopped
+
+    networks:
+      - wallet-network
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: docker/php/Dockerfile
+
+    image: wallet-app-php:8.4-dev
+    container_name: wallet-app-api
+
+    working_dir: /var/www/html
+
+    volumes:
+      - ./backend:/var/www/html
+
+    depends_on:
+      database:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    networks:
+      - wallet-network
+
+networks:
+  wallet-network:
+    driver: bridge
