@@ -43,7 +43,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
 
     volumes:
-      - ./backend:/var/www/html
+      - ./backend/src:/var/www/html
 
     depends_on:
       database:
