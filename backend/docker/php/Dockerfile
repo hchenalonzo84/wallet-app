@@ -23,8 +23,14 @@ RUN apt-get update \
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
+COPY docker/php/entrypoint.sh /usr/local/bin/wallet-entrypoint
+
+RUN chmod +x /usr/local/bin/wallet-entrypoint
+
 WORKDIR /var/www/html
 
 EXPOSE 9000
+
+ENTRYPOINT ["wallet-entrypoint"]
 
 CMD ["php-fpm"]
