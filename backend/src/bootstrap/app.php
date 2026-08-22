@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,10 +14,37 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        /*
+         * Wallet App utiliza Laravel como backend API.
+         *
+         * Una petición no autenticada no debe intentar redirigir
+         * a una ruta web llamada "login".
+         */
+        $middleware->redirectGuestsTo(null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        /*
+         * Todas las rutas API deben devolver errores en JSON,
+         * independientemente del encabezado Accept enviado
+         * por el cliente.
+         */
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*')
+                || $request->expectsJson(),
         );
-    })->create();
+
+        /*
+         * Respuesta uniforme para peticiones API
+         * sin autenticación válida.
+         */
+        $exceptions->render(
+            function (AuthenticationException $exception, Request $request) {
+                if ($request->is('api/*')) {
+                    return response()->json([
+                        'message' => 'No autenticado.',
+                    ], 401);
+                }
+            },
+        );
+    })
+    ->create();
