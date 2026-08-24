@@ -5,30 +5,33 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'user_id',
-    'name',
+    'pocket_id',
+    'type',
+    'amount',
     'description',
-    'is_active',
+    'occurred_at',
+    'transfer_group_id',
 ])]
-class Pocket extends Model
+class Movement extends Model
 {
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function movements(): HasMany
+    public function pocket(): BelongsTo
     {
-        return $this->hasMany(Movement::class);
+        return $this->belongsTo(Pocket::class);
     }
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'amount' => 'decimal:2',
+            'occurred_at' => 'datetime',
         ];
     }
 }

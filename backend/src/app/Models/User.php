@@ -27,19 +27,16 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * Get the pockets owned by the user.
-     */
     public function pockets(): HasMany
     {
         return $this->hasMany(Pocket::class);
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    public function movements(): HasMany
+    {
+        return $this->hasMany(Movement::class);
+    }
+
     protected function casts(): array
     {
         return [
