@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BalanceController;
 use App\Http\Controllers\Api\MovementController;
 use App\Http\Controllers\Api\PocketController;
 use App\Http\Controllers\HealthController;
@@ -50,6 +51,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/movements/{movement}', [
         MovementController::class,
+        'show',
+    ]);
+
+    Route::get('/balances', [
+        BalanceController::class,
+        'index',
+    ]);
+
+    Route::get('/pockets/{pocket}/balance', [
+        BalanceController::class,
         'show',
     ]);
 });
