@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BalanceController;
 use App\Http\Controllers\Api\MovementController;
 use App\Http\Controllers\Api\PocketController;
+use App\Http\Controllers\Api\TransferController;
 use App\Http\Controllers\HealthController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,5 +63,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pockets/{pocket}/balance', [
         BalanceController::class,
         'show',
+    ]);
+
+    Route::post('/transfers', [
+        TransferController::class,
+        'store',
     ]);
 });
