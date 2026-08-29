@@ -56,6 +56,26 @@ services:
     networks:
       - wallet-network
 
+  frontend:
+    build:
+      context: ./backend
+      dockerfile: docker/node/Dockerfile
+
+    image: wallet-app-node:26.8.1-npm12.0.2-dev
+    container_name: wallet-app-frontend
+
+    working_dir: /var/www/html
+
+    ports:
+      - "127.0.0.1:5173:5173"
+
+    volumes:
+      - ./backend/src:/var/www/html
+      - frontend-node-modules:/var/www/html/node_modules
+
+    networks:
+      - wallet-network
+
   nginx:
     image: nginx:1.29-alpine
     container_name: wallet-app-nginx
@@ -105,3 +125,4 @@ networks:
 
 volumes:
   pgadmin-data:
+  frontend-node-modules:
