@@ -1,18 +1,22 @@
 name: wallet-app
 
 services:
+  # Base de datos PostgreSQL de la aplicación.
   database:
     image: postgres:18.4-alpine3.24
     container_name: wallet-app-database
 
+    # Datos de conexión obtenidos desde el .env raíz.
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
+    # Conserva los datos de PostgreSQL fuera del contenedor.
     volumes:
       - ${POSTGRES_DATA_DIR}:/var/lib/postgresql
 
+    # Comprueba que PostgreSQL esté listo para aceptar conexiones.
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
@@ -24,6 +28,7 @@ services:
     networks:
       - wallet-network
 
+  # API Laravel ejecutada con PHP 8.4.
   api:
     build:
       context: ./backend
@@ -34,6 +39,7 @@ services:
 
     working_dir: /var/www/html
 
+    # Configuración que Laravel utiliza para conectarse a PostgreSQL.
     environment:
       DB_CONNECTION: pgsql
       DB_HOST: database
@@ -44,6 +50,45 @@ services:
 
       COMPOSER_ALLOW_SUPERUSER: "1"
 
+    # Monta el código Laravel para desarrollo.
+    volumes:
+      - ./backend/src:/var/www/html
+
+    # Inicia cuando PostgreSQL esté disponible.
+    depends_on:
+      database:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    networks:
+      - wallet-network
+
+  # Ejecuta continuamente las tareas programadas de Laravel.
+  scheduler:
+    image: wallet-app-php:8.4-dev
+    container_name: wallet-app-scheduler
+
+    working_dir: /var/www/html
+
+    # Mantiene activo Laravel Scheduler.
+    command:
+      - php
+      - artisan
+      - schedule:work
+
+    # Usa la misma base de datos que la API.
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      COMPOSER_ALLOW_SUPERUSER: "1"
+
+    # Comparte el mismo código Laravel que la API.
     volumes:
       - ./backend/src:/var/www/html
 
@@ -56,10 +101,12 @@ services:
     networks:
       - wallet-network
 
+  # Nginx recibe las peticiones HTTP y las dirige hacia Laravel.
   nginx:
     image: nginx:1.29-alpine
     container_name: wallet-app-nginx
 
+    # La aplicación queda disponible localmente en el puerto 8080.
     ports:
       - "127.0.0.1:8080:80"
 
@@ -75,6 +122,7 @@ services:
     networks:
       - wallet-network
 
+  # Interfaz web para administrar PostgreSQL.
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: wallet-app-pgadmin
@@ -84,9 +132,11 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_DISABLE_POSTFIX: "1"
 
+    # pgAdmin queda disponible localmente en el puerto 5050.
     ports:
       - "127.0.0.1:5050:80"
 
+    # Conserva la configuración interna de pgAdmin.
     volumes:
       - pgadmin-data:/var/lib/pgadmin
 
@@ -99,9 +149,11 @@ services:
     networks:
       - wallet-network
 
+# Red privada compartida por los servicios de Wallet App.
 networks:
   wallet-network:
     driver: bridge
 
+# Volumen persistente utilizado por pgAdmin.
 volumes:
   pgadmin-data:
