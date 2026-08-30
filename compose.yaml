@@ -54,7 +54,6 @@ services:
     volumes:
       - ./backend/src:/var/www/html
 
-    # Inicia cuando PostgreSQL esté disponible.
     depends_on:
       database:
         condition: service_healthy
@@ -101,12 +100,35 @@ services:
     networks:
       - wallet-network
 
+  # Entorno Node.js para React, TypeScript y Vite.
+  frontend:
+    build:
+      context: ./backend
+      dockerfile: docker/node/Dockerfile
+
+    image: wallet-app-node:26.8.1-npm12.0.2-dev
+    container_name: wallet-app-frontend
+
+    working_dir: /var/www/html
+
+    # Vite queda disponible solo desde el equipo local.
+    ports:
+      - "127.0.0.1:5173:5173"
+
+    # Mantiene node_modules dentro de Docker.
+    volumes:
+      - ./backend/src:/var/www/html
+      - frontend-node-modules:/var/www/html/node_modules
+
+    networks:
+      - wallet-network
+
   # Nginx recibe las peticiones HTTP y las dirige hacia Laravel.
   nginx:
     image: nginx:1.29-alpine
     container_name: wallet-app-nginx
 
-    # La aplicación queda disponible localmente en el puerto 8080.
+    # Aplicación disponible localmente en el puerto 8080.
     ports:
       - "127.0.0.1:8080:80"
 
@@ -149,11 +171,12 @@ services:
     networks:
       - wallet-network
 
-# Red privada compartida por los servicios de Wallet App.
+# Red privada compartida por todos los servicios.
 networks:
   wallet-network:
     driver: bridge
 
-# Volumen persistente utilizado por pgAdmin.
+# Volúmenes persistentes utilizados por pgAdmin y el frontend.
 volumes:
   pgadmin-data:
+  frontend-node-modules:
