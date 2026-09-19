@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         /*
+         * Permite que Sanctum autentique la SPA web mediante
+         * cookies de sesión sin afectar los tokens Bearer.
+         */
+        $middleware->statefulApi();
+
+        /*
          * Wallet App utiliza Laravel como backend API.
          *
          * Una petición no autenticada no debe intentar redirigir
