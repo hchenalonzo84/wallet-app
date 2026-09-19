@@ -3,6 +3,7 @@ import '../css/app.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { AuthProvider } from './providers/AuthProvider';
 import { AppRouter } from './router';
 
 const rootElement = document.getElementById('root');
@@ -15,6 +16,8 @@ if (rootElement === null) {
 
 createRoot(rootElement).render(
     <StrictMode>
-        <AppRouter />
+        <AuthProvider>
+            <AppRouter />
+        </AuthProvider>
     </StrictMode>,
 );
