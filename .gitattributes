@@ -1,0 +1,6 @@
+# Scripts ejecutados dentro de contenedores Linux
+*.sh text eol=lf
+
+# Configuración de contenedores
+Dockerfile text eol=lf
+*.conf text eol=lf

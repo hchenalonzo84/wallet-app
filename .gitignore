@@ -43,6 +43,7 @@ desktop.ini
 # Datos locales y respaldos
 backups/
 docker-data/
+.docker-data/
 *.sql
 *.dump
 *.backup
