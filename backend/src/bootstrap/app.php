@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         /*
+         * Confía en los proxies que anteceden a Laravel.
+         * Permite detectar HTTPS cuando TLS termina en Tailscale Serve.
+         */
+        $middleware->trustProxies(at: '*');
+
+        /*
          * Permite que Sanctum autentique la SPA web mediante
          * cookies de sesión sin afectar los tokens Bearer.
          */
@@ -22,17 +28,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         /*
          * Wallet App utiliza Laravel como backend API.
-         *
-         * Una petición no autenticada no debe intentar redirigir
-         * a una ruta web llamada "login".
+         * Una petición no autenticada no debe redirigir a "login".
          */
         $middleware->redirectGuestsTo(null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*
-         * Todas las rutas API deben devolver errores en JSON,
-         * independientemente del encabezado Accept enviado
-         * por el cliente.
+         * Todas las rutas API devuelven errores en JSON.
          */
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*')
@@ -40,8 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         /*
-         * Respuesta uniforme para peticiones API
-         * sin autenticación válida.
+         * Respuesta uniforme para peticiones API sin autenticación.
          */
         $exceptions->render(
             function (AuthenticationException $exception, Request $request) {
