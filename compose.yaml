@@ -1,22 +1,35 @@
 name: wallet-app
 
+# Configuración compartida por los dos modos del frontend.
+x-frontend-base: &frontend-base
+  build:
+    context: ./backend
+    dockerfile: docker/node/Dockerfile
+
+  image: wallet-app-node:26.8.1-npm12.0.2
+  working_dir: /var/www/html
+
+  volumes:
+    - ./backend/src:/var/www/html
+    - frontend-node-modules:/var/www/html/node_modules
+
+  networks:
+    - wallet-network
+
 services:
   # Base de datos PostgreSQL de la aplicación.
   database:
     image: postgres:18.4-alpine3.24
     container_name: wallet-app-database
 
-    # Datos de conexión obtenidos desde el .env raíz.
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
-    # Conserva los datos de PostgreSQL fuera del contenedor.
     volumes:
       - ${POSTGRES_DATA_DIR}:/var/lib/postgresql
 
-    # Comprueba que PostgreSQL esté listo para aceptar conexiones.
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
@@ -39,7 +52,6 @@ services:
 
     working_dir: /var/www/html
 
-    # Configuración que Laravel utiliza para conectarse a PostgreSQL.
     environment:
       DB_CONNECTION: pgsql
       DB_HOST: database
@@ -50,7 +62,6 @@ services:
 
       COMPOSER_ALLOW_SUPERUSER: "1"
 
-    # Monta el código Laravel para desarrollo.
     volumes:
       - ./backend/src:/var/www/html
 
@@ -70,13 +81,11 @@ services:
 
     working_dir: /var/www/html
 
-    # Mantiene activo Laravel Scheduler.
     command:
       - php
       - artisan
       - schedule:work
 
-    # Usa la misma base de datos que la API.
     environment:
       DB_CONNECTION: pgsql
       DB_HOST: database
@@ -87,7 +96,6 @@ services:
 
       COMPOSER_ALLOW_SUPERUSER: "1"
 
-    # Comparte el mismo código Laravel que la API.
     volumes:
       - ./backend/src:/var/www/html
 
@@ -100,35 +108,39 @@ services:
     networks:
       - wallet-network
 
-  # Entorno Node.js para React, TypeScript y Vite.
+  # Vite permanece activo únicamente durante desarrollo.
   frontend:
-    build:
-      context: ./backend
-      dockerfile: docker/node/Dockerfile
+    <<: *frontend-base
 
-    image: wallet-app-node:26.8.1-npm12.0.2-dev
     container_name: wallet-app-frontend
 
-    working_dir: /var/www/html
+    profiles:
+      - development
 
-    # Vite queda disponible solo desde el equipo local.
     ports:
       - "127.0.0.1:5173:5173"
 
-    # Mantiene node_modules dentro de Docker.
-    volumes:
-      - ./backend/src:/var/www/html
-      - frontend-node-modules:/var/www/html/node_modules
+  # En producción compila React y termina después del build.
+  frontend-build:
+    <<: *frontend-base
 
-    networks:
-      - wallet-network
+    container_name: wallet-app-frontend-build
 
-  # Nginx recibe las peticiones HTTP y las dirige hacia Laravel.
+    profiles:
+      - production
+
+    command:
+      - sh
+      - -lc
+      - rm -f public/hot && npm ci && npm run build
+
+    restart: "no"
+
+  # Nginx sirve Laravel y los assets compilados.
   nginx:
     image: nginx:1.29-alpine
     container_name: wallet-app-nginx
 
-    # Aplicación disponible localmente en el puerto 8080.
     ports:
       - "127.0.0.1:8080:80"
 
@@ -154,11 +166,9 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_DISABLE_POSTFIX: "1"
 
-    # pgAdmin queda disponible localmente en el puerto 5050.
     ports:
       - "127.0.0.1:5050:80"
 
-    # Conserva la configuración interna de pgAdmin.
     volumes:
       - pgadmin-data:/var/lib/pgadmin
 
@@ -176,7 +186,7 @@ networks:
   wallet-network:
     driver: bridge
 
-# Volúmenes persistentes utilizados por pgAdmin y el frontend.
+# Volúmenes persistentes administrados por Docker.
 volumes:
   pgadmin-data:
   frontend-node-modules:
