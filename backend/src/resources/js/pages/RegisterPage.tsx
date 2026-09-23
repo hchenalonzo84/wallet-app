@@ -12,39 +12,56 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { HttpError } from '../services/http';
 
-interface ErrorResponse {
-    message?: string;
+// Comprueba que el valor pueda tratarse como un objeto indexado.
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
 }
 
-// Comprueba si una respuesta desconocida contiene un mensaje.
-function hasErrorMessage(data: unknown): data is ErrorResponse {
-    return (
-        typeof data === 'object'
-        && data !== null
-        && 'message' in data
-        && typeof data.message === 'string'
-    );
+// Obtiene el primer mensaje útil devuelto por Laravel.
+function getErrorMessage(data: unknown): string | null {
+    if (!isRecord(data)) {
+        return null;
+    }
+
+    const errors = data.errors;
+
+    if (isRecord(errors)) {
+        for (const value of Object.values(errors)) {
+            if (
+                Array.isArray(value)
+                && typeof value[0] === 'string'
+            ) {
+                return value[0];
+            }
+        }
+    }
+
+    return typeof data.message === 'string'
+        ? data.message
+        : null;
 }
 
 /**
- * Formulario de inicio de sesión de la aplicación web.
+ * Formulario para crear una nueva cuenta web.
  */
-export function LoginPage() {
+export function RegisterPage() {
     const {
         user,
         isLoading,
-        login,
+        register,
     } = useAuth();
 
     const navigate = useNavigate();
 
+    const [name, setName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
-    const [remember, setRemember] = useState<boolean>(false);
+    const [passwordConfirmation, setPasswordConfirmation] =
+        useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // Envía las credenciales al backend mediante Sanctum SPA.
+    // Crea la cuenta e inicia automáticamente la sesión web.
     const handleSubmit = async (
         event: FormEvent<HTMLFormElement>,
     ): Promise<void> => {
@@ -54,24 +71,25 @@ export function LoginPage() {
         setIsSubmitting(true);
 
         try {
-            await login({
+            await register({
+                name,
                 email,
                 password,
-                remember,
+                password_confirmation: passwordConfirmation,
             });
 
             navigate('/', {
                 replace: true,
             });
         } catch (error: unknown) {
-            if (
-                error instanceof HttpError
-                && hasErrorMessage(error.data)
-            ) {
-                setErrorMessage(error.data.message ?? null);
+            if (error instanceof HttpError) {
+                setErrorMessage(
+                    getErrorMessage(error.data)
+                    ?? 'No fue posible crear la cuenta.',
+                );
             } else {
                 setErrorMessage(
-                    'No fue posible iniciar sesión. Inténtalo nuevamente.',
+                    'No fue posible crear la cuenta. Inténtalo nuevamente.',
                 );
             }
         } finally {
@@ -79,7 +97,7 @@ export function LoginPage() {
         }
     };
 
-    // Un usuario autenticado no necesita volver al formulario.
+    // Un usuario autenticado no necesita volver a registrarse.
     if (!isLoading && user !== null) {
         return <Navigate to="/" replace />;
     }
@@ -92,17 +110,36 @@ export function LoginPage() {
                 </p>
 
                 <h1 className="text-3xl font-semibold tracking-tight">
-                    Iniciar sesión
+                    Crear cuenta
                 </h1>
 
                 <p className="mt-3 text-sm leading-6 text-slate-400">
-                    Ingresa tus credenciales para acceder a tus finanzas.
+                    Crea tu cuenta para comenzar a administrar tus finanzas.
                 </p>
 
                 <form
                     className="mt-8 space-y-5"
                     onSubmit={(event) => void handleSubmit(event)}
                 >
+                    <div>
+                        <label
+                            htmlFor="name"
+                            className="mb-2 block text-sm font-medium"
+                        >
+                            Nombre
+                        </label>
+
+                        <input
+                            id="name"
+                            type="text"
+                            autoComplete="name"
+                            required
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
+                        />
+                    </div>
+
                     <div>
                         <label
                             htmlFor="email"
@@ -133,7 +170,8 @@ export function LoginPage() {
                         <input
                             id="password"
                             type="password"
-                            autoComplete="current-password"
+                            autoComplete="new-password"
+                            minLength={8}
                             required
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
@@ -141,16 +179,27 @@ export function LoginPage() {
                         />
                     </div>
 
-                    <label className="flex items-center gap-3 text-sm text-slate-300">
-                        <input
-                            type="checkbox"
-                            checked={remember}
-                            onChange={(event) => setRemember(event.target.checked)}
-                            className="h-4 w-4"
-                        />
+                    <div>
+                        <label
+                            htmlFor="password-confirmation"
+                            className="mb-2 block text-sm font-medium"
+                        >
+                            Confirmar contraseña
+                        </label>
 
-                        Mantener sesión iniciada
-                    </label>
+                        <input
+                            id="password-confirmation"
+                            type="password"
+                            autoComplete="new-password"
+                            minLength={8}
+                            required
+                            value={passwordConfirmation}
+                            onChange={(event) =>
+                                setPasswordConfirmation(event.target.value)
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
+                        />
+                    </div>
 
                     {errorMessage !== null && (
                         <p
@@ -167,18 +216,18 @@ export function LoginPage() {
                         className="w-full rounded-xl bg-teal-500 px-4 py-3 font-medium text-slate-950 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {isSubmitting
-                            ? 'Iniciando sesión...'
-                            : 'Iniciar sesión'}
+                            ? 'Creando cuenta...'
+                            : 'Crear cuenta'}
                     </button>
                 </form>
 
                 <p className="mt-6 text-center text-sm text-slate-400">
-                    ¿No tienes una cuenta?{' '}
+                    ¿Ya tienes una cuenta?{' '}
                     <Link
-                        to="/register"
+                        to="/login"
                         className="font-medium text-teal-400 hover:text-teal-300"
                     >
-                        Crear cuenta
+                        Iniciar sesión
                     </Link>
                 </p>
             </section>
