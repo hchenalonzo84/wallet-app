@@ -12,6 +12,7 @@ import { HttpError } from '../services/http';
 import type {
     AuthUser,
     LoginCredentials,
+    RegisterCredentials,
 } from '../types/auth';
 
 interface AuthProviderProps {
@@ -43,6 +44,15 @@ export function AuthProvider({
             throw error;
         }
     }, []);
+
+    // Registra al usuario y conserva la nueva sesión en memoria.
+    const register = async (
+        credentials: RegisterCredentials,
+    ): Promise<void> => {
+        const response = await authService.register(credentials);
+
+        setUser(response.user);
+    };
 
     // Inicia sesión y conserva el usuario devuelto por Laravel.
     const login = async (
@@ -76,6 +86,7 @@ export function AuthProvider({
             value={{
                 user,
                 isLoading,
+                register,
                 login,
                 logout,
                 refreshUser,

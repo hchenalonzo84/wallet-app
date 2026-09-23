@@ -3,6 +3,8 @@ import type {
     LoginCredentials,
     LoginResponse,
     MessageResponse,
+    RegisterCredentials,
+    RegisterResponse,
 } from '../types/auth';
 
 import { httpRequest } from './http';
@@ -14,6 +16,18 @@ async function initializeCsrf(): Promise<void> {
 
 // Servicio encargado de las operaciones de autenticación web.
 export const authService = {
+    // Registra al usuario utilizando sesión y cookies de Laravel.
+    async register(
+        credentials: RegisterCredentials,
+    ): Promise<RegisterResponse> {
+        await initializeCsrf();
+
+        return httpRequest<RegisterResponse>('/register', {
+            method: 'POST',
+            body: JSON.stringify(credentials),
+        });
+    },
+
     // Inicia sesión utilizando cookies seguras de Laravel.
     async login(credentials: LoginCredentials): Promise<LoginResponse> {
         await initializeCsrf();
