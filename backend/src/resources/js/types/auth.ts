@@ -15,6 +15,14 @@ export interface LoginCredentials {
     remember: boolean;
 }
 
+// Datos enviados desde el formulario de registro.
+export interface RegisterCredentials {
+    name: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+}
+
 // Respuesta utilizada al consultar al usuario autenticado.
 export interface AuthUserResponse {
     user: AuthUser;
@@ -22,6 +30,11 @@ export interface AuthUserResponse {
 
 // Respuesta devuelta después de iniciar sesión correctamente.
 export interface LoginResponse extends AuthUserResponse {
+    message: string;
+}
+
+// Respuesta devuelta después de registrar al usuario.
+export interface RegisterResponse extends AuthUserResponse {
     message: string;
 }
 
