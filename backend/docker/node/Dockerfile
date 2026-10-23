@@ -1,4 +1,4 @@
-FROM node:26.8.1-bookworm-slim
+FROM node:26.12.1-bookworm-slim
 
 ARG NPM_VERSION=12.0.2
 
