@@ -6,7 +6,7 @@ x-frontend-base: &frontend-base
     context: ./backend
     dockerfile: docker/node/Dockerfile
 
-  image: wallet-app-node:26.8.1-npm12.0.2
+  image: wallet-app-node:26.12.1-npm12.0.2
   working_dir: /var/www/html
 
   volumes:
@@ -47,7 +47,7 @@ services:
       context: ./backend
       dockerfile: docker/php/Dockerfile
 
-    image: wallet-app-php:8.4-dev
+    image: wallet-app-php:8.4.27-dev
     container_name: wallet-app-api
 
     working_dir: /var/www/html
@@ -76,7 +76,7 @@ services:
 
   # Ejecuta continuamente las tareas programadas de Laravel.
   scheduler:
-    image: wallet-app-php:8.4-dev
+    image: wallet-app-php:8.4.27-dev
     container_name: wallet-app-scheduler
 
     working_dir: /var/www/html
@@ -138,7 +138,7 @@ services:
 
   # Nginx sirve Laravel y los assets compilados.
   nginx:
-    image: nginx:1.29-alpine
+    image: nginx:1.30.6-alpine3.24
     container_name: wallet-app-nginx
 
     ports:
@@ -181,12 +181,10 @@ services:
     networks:
       - wallet-network
 
-# Red privada compartida por todos los servicios.
 networks:
   wallet-network:
     driver: bridge
 
-# Volúmenes persistentes administrados por Docker.
 volumes:
   pgadmin-data:
   frontend-node-modules:
