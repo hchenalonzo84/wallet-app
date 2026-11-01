@@ -1,114 +1,109 @@
-import {
-    useState,
-} from 'react';
+import { Link } from 'react-router-dom';
 
-import { useAuth } from '../hooks/useAuth';
+import { AppHeader } from '../components/AppHeader';
 
 /**
- * Página inicial mostrada únicamente a usuarios autenticados.
+ * Dashboard principal de Wallet App.
  */
 export function HomePage() {
-    const {
-        user,
-        logout,
-    } = useAuth();
-
-    const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
-
-    // Cierra la sesión y permite que ProtectedRoute redirija al login.
-    const handleLogout = async (): Promise<void> => {
-        setIsLoggingOut(true);
-
-        try {
-            await logout();
-        } finally {
-            setIsLoggingOut(false);
-        }
-    };
-
     return (
         <main className="min-h-screen bg-slate-950 text-slate-100">
             <div className="mx-auto min-h-screen max-w-6xl px-6 py-12">
-                <header className="flex flex-col justify-between gap-6 border-b border-slate-800 pb-8 sm:flex-row sm:items-center">
-                    <div>
-                        <p className="text-sm font-medium uppercase tracking-[0.25em] text-teal-400">
-                            Wallet App
-                        </p>
-
-                        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-                            Panel financiero
-                        </h1>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="text-right">
-                            <p className="font-medium">
-                                {user?.name}
-                            </p>
-
-                            <p className="text-sm text-slate-400">
-                                {user?.email}
-                            </p>
-                        </div>
-
-                        <button
-                            type="button"
-                            disabled={isLoggingOut}
-                            onClick={() => void handleLogout()}
-                            className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium transition hover:border-slate-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            {isLoggingOut
-                                ? 'Cerrando...'
-                                : 'Cerrar sesión'}
-                        </button>
-                    </div>
-                </header>
+                <AppHeader />
 
                 <section className="py-12">
-                    <p className="max-w-2xl text-lg leading-8 text-slate-400">
-                        La autenticación web mediante Laravel Sanctum ya está
-                        integrada. Desde aquí construiremos el dashboard y los
-                        módulos financieros.
+                    <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-400">
+                        Panel financiero
                     </p>
 
-                    <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <article className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                            <p className="text-sm text-slate-400">
-                                Backend
+                    <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                        Administra tus finanzas
+                    </h1>
+
+                    <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-400">
+                        Organiza tu dinero en bolsillos y registra desde aquí
+                        las operaciones de Wallet App.
+                    </p>
+
+                    <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        <Link
+                            to="/pockets"
+                            className="group rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-teal-800 hover:bg-slate-900/80"
+                        >
+                            <p className="text-sm text-teal-400">
+                                Disponible
                             </p>
 
-                            <p className="mt-2 font-medium">
-                                Laravel 13
+                            <h2 className="mt-2 text-xl font-semibold">
+                                Bolsillos
+                            </h2>
+
+                            <p className="mt-3 text-sm leading-6 text-slate-400">
+                                Crea y administra los bolsillos virtuales
+                                utilizados para organizar tu dinero.
+                            </p>
+
+                            <p className="mt-6 text-sm font-medium text-teal-300">
+                                Administrar →
+                            </p>
+                        </Link>
+
+                        <article className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+                            <p className="text-sm text-slate-500">
+                                Próximamente
+                            </p>
+
+                            <h2 className="mt-2 text-xl font-semibold text-slate-300">
+                                Movimientos
+                            </h2>
+
+                            <p className="mt-3 text-sm leading-6 text-slate-500">
+                                Depósitos, retiros, ajustes y movimientos
+                                financieros.
                             </p>
                         </article>
 
-                        <article className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                            <p className="text-sm text-slate-400">
-                                Web
+                        <article className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+                            <p className="text-sm text-slate-500">
+                                Próximamente
                             </p>
 
-                            <p className="mt-2 font-medium">
-                                React + TypeScript
-                            </p>
-                        </article>
+                            <h2 className="mt-2 text-xl font-semibold text-slate-300">
+                                Transferencias
+                            </h2>
 
-                        <article className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                            <p className="text-sm text-slate-400">
-                                Autenticación
-                            </p>
-
-                            <p className="mt-2 font-medium">
-                                Sanctum SPA
+                            <p className="mt-3 text-sm leading-6 text-slate-500">
+                                Transferencias internas entre tus bolsillos.
                             </p>
                         </article>
 
-                        <article className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                            <p className="text-sm text-slate-400">
-                                Sesión
+                        <article className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+                            <p className="text-sm text-slate-500">
+                                Próximamente
                             </p>
 
-                            <p className="mt-2 font-medium">
-                                Cookie + CSRF
+                            <h2 className="mt-2 text-xl font-semibold text-slate-300">
+                                Reportes
+                            </h2>
+
+                            <p className="mt-3 text-sm leading-6 text-slate-500">
+                                Consulta el comportamiento de tus finanzas
+                                por períodos.
+                            </p>
+                        </article>
+
+                        <article className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+                            <p className="text-sm text-slate-500">
+                                Próximamente
+                            </p>
+
+                            <h2 className="mt-2 text-xl font-semibold text-slate-300">
+                                Pagos recurrentes
+                            </h2>
+
+                            <p className="mt-3 text-sm leading-6 text-slate-500">
+                                Administra tus pagos automáticos y sus próximas
+                                ejecuciones.
                             </p>
                         </article>
                     </div>
