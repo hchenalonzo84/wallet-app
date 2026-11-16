@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "skills": {
+    "refactoring-ui": {
+      "source": "wondelai/skills",
+      "commit": "c5265583b1a9740f06831e1d3e89b35bba3eb430",
+      "sourceType": "github",
+      "skillPath": "refactoring-ui/SKILL.md",
+      "computedHash": "d995183dd20c1685f8eda5bc6a9f537846354589026d64bc3aac80c2e7e8ce6b"
+    },
+    "ux-heuristics": {
+      "source": "wondelai/skills",
+      "commit": "c5265583b1a9740f06831e1d3e89b35bba3eb430",
+      "sourceType": "github",
+      "skillPath": "ux-heuristics/SKILL.md",
+      "computedHash": "42bf5673212445b63ec0db611cfef58429946b9038b8ba9a6d4397d6161ff93c"
+    }
+  }
+}
