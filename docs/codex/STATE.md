@@ -1,6 +1,6 @@
 # Estado operativo de Wallet App
 
-Inspección de bootstrap: 2026-11-16. Describe archivos y Git locales; no certifica el estado de producción.
+Estado actualizado: 2026-11-19. Describe archivos y Git locales; no certifica el estado de producción.
 
 ## Estado funcional
 
@@ -29,8 +29,8 @@ Gestión web de bolsillos (`feature: agrega gestion web de bolsillos`), integrad
 
 ## Estado Git
 
-- Ramas locales permanentes `dev`, `qa`, `main`, cada una con upstream `origin` correspondiente. Rama inspeccionada: `main`; árbol inicialmente limpio. No se consultó ni actualizó el remoto.
-- Flujo vigente: feature branch → dev → qa → main → producción; QA exige suite completa. Bootstrap sin cambio de rama, commit, push, merge ni despliegue.
+- Ramas locales permanentes `dev`, `qa`, `main`, cada una con upstream `origin` correspondiente. La migración de skills se versiona en `chore/ui-ux-pro-max`, basada directamente en `dev` y `origin/dev`.
+- Flujo vigente: feature/chore branch → dev → qa → main → producción; QA exige suite completa. No se hizo merge, PR ni despliegue durante la migración de skills.
 
 ## Pendientes conocidos y discrepancias
 
@@ -42,12 +42,14 @@ Gestión web de bolsillos (`feature: agrega gestion web de bolsillos`), integrad
 - Inspeccionados rutas, servicios, React, manifests/lockfiles, Docker, Git y pruebas. Existen pruebas Feature para autenticación API/web, registro web, bolsillos, movimientos, balances, transferencias, reportes y recurrentes/procesamiento/comando; no hay runner de tests frontend configurado en `package.json`.
 - PHPUnit fuerza PostgreSQL `wallet_app_testing` antes de iniciar Laravel; `TestCase` comprueba entorno/base y rechaza configuración cacheada. No se ejecutaron pruebas de producto, builds ni auditorías de dependencias durante este cambio documental.
 - `docker compose ps` no pudo conectar con Docker Desktop Linux Engine. No se iniciaron servicios ni se tocaron bases/volúmenes. PowerShell bloquea `npm.ps1`; se usaron `npm.cmd`/`npx.cmd` sin cambiar la política del sistema.
-- `npx skills list --agent codex` reconoce exactamente las tres skills locales; listado global sin skills adicionales. Motor Impeccable comprobado con `engine-probe`: **0.1.24**.
+- `npx skills list --agent codex` reconoce las tres skills locales vigentes: `ui-ux-pro-max`, `refactoring-ui` y `ux-heuristics`. UI UX Pro Max incluye su buscador local y datos; Python **3.15.2** está disponible.
 
 ## Decisiones vigentes
 
 - Reglas permanentes en `AGENTS.md`; contexto de producto confirmado por la solicitud y código en `PRODUCT.md`. Actualizar este estado únicamente tras cambios materiales.
-- Skills locales en `.agents/skills`: **impeccable 4.9.1**, **refactoring-ui 1.5.1**, **ux-heuristics 1.6.0**. Impeccable dirige UI; Refactoring UI apoya consistencia; UX Heuristics audita usabilidad.
-- Impeccable instalado mediante `npx impeccable install --providers=codex --scope=project --no-hooks --yes`; el instalador guardó el motor auxiliar en `~/.impeccable/bin/0.1.24`, no una skill global. Sin hooks ni rediseño. Wondel instalado con selección explícita de cada skill y agente Codex; procedencia fijada en `skills-lock.json` (solo las dos Wondel; Impeccable lo gestiona su instalador).
+- Las dos direcciones visuales experimentales de `feature/frontend-ui-refresh` fueron rechazadas y retiradas; el frontend volvió al diseño funcional contenido en `dev`. Ninguna nueva dirección visual está aprobada.
+- Skills locales en `.agents/skills`: **ui-ux-pro-max 2.15.0**, **refactoring-ui 1.5.1** y **ux-heuristics 1.6.0**. UI UX Pro Max es la única autoridad principal de UI/UX; las otras dos se usan solo por solicitud explícita.
+- Impeccable, su configuración, briefs, revisiones y hooks fueron retirados del proyecto. `PRODUCT.md` conserva el contexto de producto sin fijar paleta ni dirección artística de los experimentos rechazados.
+- El siguiente trabajo visual será rediseñar únicamente Dashboard/Resumen, con revisión visual intermedia antes de ampliar el alcance.
 - Las nuevas skills pueden requerir una nueva sesión/recarga de Codex para incorporarse al catálogo de la extensión. La verificación por CLI y archivos no certifica actualización en caliente de la sesión actual.
 - Balances derivados del libro, movimientos inmutables por API, reglas financieras en backend, autenticación dual y migraciones de producción manuales se mantienen.
