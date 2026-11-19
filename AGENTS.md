@@ -33,7 +33,7 @@
 - Antes de pruebas Laravel verifica el destino exclusivo `wallet_app_testing` y conserva las protecciones de `tests/bootstrap.php` y `tests/TestCase.php`; no ejecutes pruebas contra datos reales. No ejecutes tareas costosas ajenas al cambio. Informa qué se validó y qué no pudo validarse.
 
 ## UX/UI y skills locales
-- Skills del proyecto: `.agents/skills`. Usa `$impeccable` como dirección visual principal; `refactoring-ui` apoya jerarquía, espaciado, tipografía, contraste y consistencia; `ux-heuristics` audita navegación, feedback, errores, fricción y carga cognitiva.
-- Establece una dirección visual y después audítala; no ejecutes tres rediseños independientes. Respeta patrones aprobados y el alcance de cada solicitud.
-- Prioriza claridad, accesibilidad, jerarquía, consistencia, responsive y estética, en ese orden. Mantén una interfaz sobria, moderna, limpia y profesional, con lectura financiera clara.
-- Carga las skills pertinentes solo cuando la tarea lo necesite. No instales colecciones completas, otras skills, MCP o frameworks UI sin autorización.
+- Skills del proyecto: `.agents/skills`. UI UX Pro Max es la autoridad principal para diseño visual y experiencia de usuario de Wallet App; utiliza `$ui-ux-pro-max` en tareas de UI/UX y consulta su sistema de diseño y reglas antes de implementar.
+- Mantén consistencia entre pantallas y trabaja una superficie a la vez cuando el usuario lo solicite. No realices rediseños masivos sin una revisión visual intermedia ni conviertas varias skills en autoridades simultáneas.
+- Prioriza accesibilidad, responsive, jerarquía, legibilidad, claridad financiera, consistencia y estética, en ese orden. Mantén una interfaz sobria, moderna, limpia y profesional.
+- `refactoring-ui` y `ux-heuristics` son herramientas opcionales: úsalas únicamente cuando el usuario las solicite expresamente. No instales otras skills, MCP o frameworks UI sin autorización.
