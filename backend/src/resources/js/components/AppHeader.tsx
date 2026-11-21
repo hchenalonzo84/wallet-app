@@ -1,6 +1,9 @@
 import { useState } from 'react';
 
-import { Link } from 'react-router-dom';
+import {
+    Link,
+    NavLink,
+} from 'react-router-dom';
 
 import { useAuth } from '../hooks/useAuth';
 
@@ -15,7 +18,6 @@ export function AppHeader() {
 
     const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
-    // Finaliza la sesión actual del navegador.
     const handleLogout = async (): Promise<void> => {
         setIsLoggingOut(true);
 
@@ -26,54 +28,92 @@ export function AppHeader() {
         }
     };
 
+    const navLinkClass = ({
+        isActive,
+    }: {
+        isActive: boolean;
+    }): string => {
+        const shared = 'inline-flex min-h-11 items-center border-b-2 px-1 text-sm font-semibold transition-colors duration-150';
+
+        return `${shared} ${isActive
+            ? 'border-[var(--primary)] text-[var(--text-primary)]'
+            : 'border-transparent text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'}`;
+    };
+
     return (
-        <header className="border-b border-slate-800 pb-8">
-            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-                <div>
-                    <Link
-                        to="/"
-                        className="text-sm font-medium uppercase tracking-[0.25em] text-teal-400"
+        <header className="relative border-b border-[var(--border-strong)] pb-4">
+            <a
+                href="#main-content"
+                className="absolute left-0 top-0 z-20 -translate-y-[160%] bg-[var(--charcoal)] px-4 py-3 text-sm font-semibold text-[var(--on-charcoal)] transition-transform focus:translate-y-0"
+            >
+                Ir al contenido
+            </a>
+
+            <div className="grid grid-cols-[1fr_auto] items-start gap-x-4 gap-y-4 sm:items-center lg:grid-cols-[auto_1fr_auto] lg:gap-x-10">
+                <Link
+                    to="/"
+                    className="inline-flex min-h-11 w-fit items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[var(--text-primary)]"
+                >
+                    <span
+                        aria-hidden="true"
+                        className="grid h-8 w-8 place-items-center bg-[var(--primary)] text-xs font-bold text-white shadow-[2px_2px_0_var(--charcoal)]"
                     >
+                        W
+                    </span>
+                    <span className="hidden min-[360px]:inline">
                         Wallet App
-                    </Link>
+                    </span>
+                </Link>
 
-                    <nav className="mt-4 flex flex-wrap gap-2">
-                        <Link
-                            to="/"
-                            className="rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-900 hover:text-white"
+                <nav
+                    aria-label="Navegación principal"
+                    className="order-3 col-span-2 flex gap-6 lg:order-none lg:col-span-1"
+                >
+                    <NavLink
+                        to="/"
+                        end
+                        className={navLinkClass}
+                    >
+                        Resumen
+                    </NavLink>
+
+                    <NavLink
+                        to="/pockets"
+                        className={navLinkClass}
+                    >
+                        Bolsillos
+                    </NavLink>
+                </nav>
+
+                <div className="flex min-w-0 items-center justify-end gap-4">
+                    <div className="hidden min-w-0 items-center gap-3 sm:flex">
+                        <span
+                            aria-hidden="true"
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--secondary-soft)] text-xs font-bold uppercase text-[var(--secondary)]"
                         >
-                            Panel
-                        </Link>
+                            {user?.name?.charAt(0) ?? 'U'}
+                        </span>
 
-                        <Link
-                            to="/pockets"
-                            className="rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-900 hover:text-white"
-                        >
-                            Bolsillos
-                        </Link>
-                    </nav>
-                </div>
+                        <div className="min-w-0 text-right">
+                            <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                                {user?.name}
+                            </p>
 
-                <div className="flex items-center gap-4">
-                    <div className="text-right">
-                        <p className="font-medium">
-                            {user?.name}
-                        </p>
-
-                        <p className="text-sm text-slate-400">
-                            {user?.email}
-                        </p>
+                            <p className="max-w-48 truncate text-xs text-[var(--text-secondary)]">
+                                {user?.email}
+                            </p>
+                        </div>
                     </div>
 
                     <button
                         type="button"
                         disabled={isLoggingOut}
                         onClick={() => void handleLogout()}
-                        className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium transition hover:border-slate-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="button button-secondary shrink-0 px-3 sm:px-4"
                     >
                         {isLoggingOut
-                            ? 'Cerrando...'
-                            : 'Cerrar sesión'}
+                            ? 'Cerrando…'
+                            : 'Salir'}
                     </button>
                 </div>
             </div>

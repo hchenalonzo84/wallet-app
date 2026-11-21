@@ -9,7 +9,9 @@ import {
     useNavigate,
 } from 'react-router-dom';
 
+import { AuthLayout } from '../components/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { HttpError } from '../services/http';
 
 interface ErrorResponse {
@@ -30,6 +32,8 @@ function hasErrorMessage(data: unknown): data is ErrorResponse {
  * Formulario de inicio de sesión de la aplicación web.
  */
 export function LoginPage() {
+    useDocumentTitle('Iniciar sesión');
+
     const {
         user,
         isLoading,
@@ -85,103 +89,96 @@ export function LoginPage() {
     }
 
     return (
-        <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-12 text-slate-100">
-            <section className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
-                <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-teal-400">
-                    Wallet App
-                </p>
-
-                <h1 className="text-3xl font-semibold tracking-tight">
-                    Iniciar sesión
-                </h1>
-
-                <p className="mt-3 text-sm leading-6 text-slate-400">
-                    Ingresa tus credenciales para acceder a tus finanzas.
-                </p>
-
-                <form
-                    className="mt-8 space-y-5"
-                    onSubmit={(event) => void handleSubmit(event)}
-                >
-                    <div>
-                        <label
-                            htmlFor="email"
-                            className="mb-2 block text-sm font-medium"
-                        >
-                            Correo electrónico
-                        </label>
-
-                        <input
-                            id="email"
-                            type="email"
-                            autoComplete="email"
-                            required
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="password"
-                            className="mb-2 block text-sm font-medium"
-                        >
-                            Contraseña
-                        </label>
-
-                        <input
-                            id="password"
-                            type="password"
-                            autoComplete="current-password"
-                            required
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
-                        />
-                    </div>
-
-                    <label className="flex items-center gap-3 text-sm text-slate-300">
-                        <input
-                            type="checkbox"
-                            checked={remember}
-                            onChange={(event) => setRemember(event.target.checked)}
-                            className="h-4 w-4"
-                        />
-
-                        Mantener sesión iniciada
-                    </label>
-
-                    {errorMessage !== null && (
-                        <p
-                            role="alert"
-                            className="rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300"
-                        >
-                            {errorMessage}
-                        </p>
-                    )}
-
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full rounded-xl bg-teal-500 px-4 py-3 font-medium text-slate-950 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        {isSubmitting
-                            ? 'Iniciando sesión...'
-                            : 'Iniciar sesión'}
-                    </button>
-                </form>
-
-                <p className="mt-6 text-center text-sm text-slate-400">
+        <AuthLayout
+            variant="login"
+            title="Iniciar sesión"
+            description="Accede a tu resumen y continúa organizando tus fondos."
+            isCheckingSession={isLoading}
+            footer={(
+                <p>
                     ¿No tienes una cuenta?{' '}
                     <Link
                         to="/register"
-                        className="font-medium text-teal-400 hover:text-teal-300"
+                        className="inline-flex min-h-11 items-center font-semibold text-[var(--primary-hover)] underline decoration-[var(--primary-light)] decoration-2 underline-offset-4 transition-colors hover:text-[var(--primary)]"
                     >
                         Crear cuenta
                     </Link>
                 </p>
-            </section>
-        </main>
+            )}
+        >
+            <form
+                className="space-y-6"
+                aria-describedby={errorMessage !== null
+                    ? 'login-error'
+                    : undefined}
+                onSubmit={(event) => void handleSubmit(event)}
+            >
+                <div>
+                    <label htmlFor="email" className="field-label">
+                        Correo electrónico
+                    </label>
+
+                    <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        disabled={isSubmitting || isLoading}
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        className="field-control"
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="password" className="field-label">
+                        Contraseña
+                    </label>
+
+                    <input
+                        id="password"
+                        type="password"
+                        autoComplete="current-password"
+                        required
+                        disabled={isSubmitting || isLoading}
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        className="field-control"
+                    />
+                </div>
+
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-[var(--text-secondary)]">
+                    <input
+                        type="checkbox"
+                        checked={remember}
+                        disabled={isSubmitting || isLoading}
+                        onChange={(event) => setRemember(event.target.checked)}
+                        className="h-5 w-5 accent-[var(--primary)]"
+                    />
+
+                    Mantener sesión iniciada
+                </label>
+
+                {errorMessage !== null && (
+                    <p
+                        id="login-error"
+                        role="alert"
+                        className="status-message status-error"
+                    >
+                        {errorMessage}
+                    </p>
+                )}
+
+                <button
+                    type="submit"
+                    disabled={isSubmitting || isLoading}
+                    className="button button-primary w-full"
+                >
+                    {isSubmitting
+                        ? 'Iniciando sesión…'
+                        : 'Iniciar sesión'}
+                </button>
+            </form>
+        </AuthLayout>
     );
 }

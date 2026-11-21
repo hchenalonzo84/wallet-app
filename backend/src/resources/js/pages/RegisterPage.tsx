@@ -9,7 +9,9 @@ import {
     useNavigate,
 } from 'react-router-dom';
 
+import { AuthLayout } from '../components/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { HttpError } from '../services/http';
 
 // Comprueba que el valor pueda tratarse como un objeto indexado.
@@ -45,6 +47,8 @@ function getErrorMessage(data: unknown): string | null {
  * Formulario para crear una nueva cuenta web.
  */
 export function RegisterPage() {
+    useDocumentTitle('Crear cuenta');
+
     const {
         user,
         isLoading,
@@ -103,134 +107,130 @@ export function RegisterPage() {
     }
 
     return (
-        <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-12 text-slate-100">
-            <section className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
-                <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-teal-400">
-                    Wallet App
-                </p>
-
-                <h1 className="text-3xl font-semibold tracking-tight">
-                    Crear cuenta
-                </h1>
-
-                <p className="mt-3 text-sm leading-6 text-slate-400">
-                    Crea tu cuenta para comenzar a administrar tus finanzas.
-                </p>
-
-                <form
-                    className="mt-8 space-y-5"
-                    onSubmit={(event) => void handleSubmit(event)}
-                >
-                    <div>
-                        <label
-                            htmlFor="name"
-                            className="mb-2 block text-sm font-medium"
-                        >
-                            Nombre
-                        </label>
-
-                        <input
-                            id="name"
-                            type="text"
-                            autoComplete="name"
-                            required
-                            value={name}
-                            onChange={(event) => setName(event.target.value)}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="email"
-                            className="mb-2 block text-sm font-medium"
-                        >
-                            Correo electrónico
-                        </label>
-
-                        <input
-                            id="email"
-                            type="email"
-                            autoComplete="email"
-                            required
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="password"
-                            className="mb-2 block text-sm font-medium"
-                        >
-                            Contraseña
-                        </label>
-
-                        <input
-                            id="password"
-                            type="password"
-                            autoComplete="new-password"
-                            minLength={8}
-                            required
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            htmlFor="password-confirmation"
-                            className="mb-2 block text-sm font-medium"
-                        >
-                            Confirmar contraseña
-                        </label>
-
-                        <input
-                            id="password-confirmation"
-                            type="password"
-                            autoComplete="new-password"
-                            minLength={8}
-                            required
-                            value={passwordConfirmation}
-                            onChange={(event) =>
-                                setPasswordConfirmation(event.target.value)
-                            }
-                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
-                        />
-                    </div>
-
-                    {errorMessage !== null && (
-                        <p
-                            role="alert"
-                            className="rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300"
-                        >
-                            {errorMessage}
-                        </p>
-                    )}
-
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full rounded-xl bg-teal-500 px-4 py-3 font-medium text-slate-950 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        {isSubmitting
-                            ? 'Creando cuenta...'
-                            : 'Crear cuenta'}
-                    </button>
-                </form>
-
-                <p className="mt-6 text-center text-sm text-slate-400">
+        <AuthLayout
+            variant="register"
+            title="Crear cuenta"
+            description="Prepara un espacio privado para organizar tus bolsillos y consultar sus saldos."
+            isCheckingSession={isLoading}
+            footer={(
+                <p>
                     ¿Ya tienes una cuenta?{' '}
                     <Link
                         to="/login"
-                        className="font-medium text-teal-400 hover:text-teal-300"
+                        className="inline-flex min-h-11 items-center font-semibold text-[var(--primary-hover)] underline decoration-[var(--primary-light)] decoration-2 underline-offset-4 transition-colors hover:text-[var(--primary)]"
                     >
                         Iniciar sesión
                     </Link>
                 </p>
-            </section>
-        </main>
+            )}
+        >
+            <form
+                className="space-y-6"
+                aria-describedby={errorMessage !== null
+                    ? 'register-error'
+                    : undefined}
+                onSubmit={(event) => void handleSubmit(event)}
+            >
+                <div>
+                    <label htmlFor="name" className="field-label">
+                        Nombre
+                    </label>
+
+                    <input
+                        id="name"
+                        type="text"
+                        autoComplete="name"
+                        required
+                        disabled={isSubmitting || isLoading}
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                        className="field-control"
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="email" className="field-label">
+                        Correo electrónico
+                    </label>
+
+                    <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        disabled={isSubmitting || isLoading}
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        className="field-control"
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="password" className="field-label">
+                        Contraseña
+                    </label>
+
+                    <input
+                        id="password"
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={8}
+                        required
+                        disabled={isSubmitting || isLoading}
+                        aria-describedby="password-help"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        className="field-control"
+                    />
+
+                    <p id="password-help" className="field-help">
+                        Utiliza al menos 8 caracteres.
+                    </p>
+                </div>
+
+                <div>
+                    <label
+                        htmlFor="password-confirmation"
+                        className="field-label"
+                    >
+                        Confirmar contraseña
+                    </label>
+
+                    <input
+                        id="password-confirmation"
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={8}
+                        required
+                        disabled={isSubmitting || isLoading}
+                        value={passwordConfirmation}
+                        onChange={(event) =>
+                            setPasswordConfirmation(event.target.value)
+                        }
+                        className="field-control"
+                    />
+                </div>
+
+                {errorMessage !== null && (
+                    <p
+                        id="register-error"
+                        role="alert"
+                        className="status-message status-error"
+                    >
+                        {errorMessage}
+                    </p>
+                )}
+
+                <button
+                    type="submit"
+                    disabled={isSubmitting || isLoading}
+                    className="button button-primary w-full"
+                >
+                    {isSubmitting
+                        ? 'Creando cuenta…'
+                        : 'Crear cuenta'}
+                </button>
+            </form>
+        </AuthLayout>
     );
 }
