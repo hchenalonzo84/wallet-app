@@ -155,10 +155,14 @@ jobs:
         run: |
           # Inicia únicamente los servicios necesarios
           # para las pruebas de backend.
+          #
+          # El contenedor api ejecutará su entrypoint.
+          # Si vendor/ no existe, ese entrypoint ejecutará
+          # composer install automáticamente.
           docker compose up -d database api
 
       # ---------------------------------------------------------
-      # 6. MOSTRAR EL ESTADO DE DOCKER
+      # 6. MOSTRAR EL ESTADO INICIAL DE DOCKER
       # ---------------------------------------------------------
 
       - name: Show Docker status
@@ -169,7 +173,35 @@ jobs:
           docker compose ps
 
       # ---------------------------------------------------------
-      # 7. GENERAR APP_KEY TEMPORAL
+      # 7. ESPERAR A QUE COMPOSER PREPARE LARAVEL
+      # ---------------------------------------------------------
+
+      - name: Wait for Laravel dependencies
+
+        run: |
+          # En un runner nuevo de GitHub Actions no existe vendor/.
+          #
+          # El entrypoint del contenedor api ejecuta composer install
+          # cuando detecta que las dependencias no están preparadas.
+          #
+          # docker compose up -d confirma que el contenedor arrancó,
+          # pero no garantiza que composer install haya terminado.
+          #
+          # Por eso esperamos hasta que vendor/autoload.php exista
+          # antes de ejecutar cualquier comando php artisan.
+          timeout 180 sh -c '
+            until docker compose exec -T api \
+              test -f /var/www/html/vendor/autoload.php
+            do
+              echo "Esperando dependencias Composer..."
+              sleep 3
+            done
+          '
+
+          echo "Laravel y Composer están preparados."
+
+      # ---------------------------------------------------------
+      # 8. GENERAR APP_KEY TEMPORAL
       # ---------------------------------------------------------
 
       - name: Generate Laravel application key
@@ -177,11 +209,11 @@ jobs:
         run: |
           # Laravel necesita APP_KEY.
           #
-          # Esta clave existe solamente durante esta ejecución CI.
+          # Esta clave existe únicamente dentro del runner CI.
           docker compose exec -T api php artisan key:generate --force
 
       # ---------------------------------------------------------
-      # 8. PREPARAR LA BASE DE DATOS DE PRUEBAS
+      # 9. PREPARAR LA BASE DE DATOS DE PRUEBAS
       # ---------------------------------------------------------
 
       - name: Prepare testing database
@@ -189,58 +221,67 @@ jobs:
         run: |
           # Ejecuta las migraciones contra PostgreSQL temporal.
           #
+          # POSTGRES_DB está configurado como:
+          #
+          # wallet_app_testing
+          #
+          # Esta base existe únicamente durante el workflow.
+          #
           # Esto NO afecta desarrollo ni producción.
           docker compose exec -T api php artisan migrate --force
 
       # ---------------------------------------------------------
-      # 9. INSTALAR DEPENDENCIAS FRONTEND
+      # 10. INSTALAR DEPENDENCIAS DEL FRONTEND
       # ---------------------------------------------------------
 
       - name: Install frontend dependencies
 
         run: |
-          # npm ci instala exactamente las versiones
-          # registradas en package-lock.json.
+          # npm ci instala exactamente las versiones registradas
+          # en package-lock.json.
           #
-          # Es preferible a npm install dentro de CI.
+          # Es preferible a npm install dentro de CI porque
+          # proporciona instalaciones reproducibles.
           docker compose run --rm frontend npm ci
 
       # ---------------------------------------------------------
-      # 10. VALIDAR TYPESCRIPT
+      # 11. VALIDAR TYPESCRIPT
       # ---------------------------------------------------------
 
       - name: TypeScript check
 
         run: |
-          # Comprueba tipos sin generar archivos compilados.
+          # Comprueba los tipos TypeScript.
+          #
+          # --noEmit evita generar archivos compilados.
           docker compose run --rm frontend npx tsc --noEmit
 
       # ---------------------------------------------------------
-      # 11. COMPILAR FRONTEND
+      # 12. COMPILAR FRONTEND
       # ---------------------------------------------------------
 
       - name: Build frontend
 
         run: |
-          # Ejecuta el build de producción de Vite.
+          # Ejecuta el build de producción mediante Vite.
           #
           # Esto detecta problemas que podrían no aparecer
           # durante el servidor de desarrollo.
           docker compose run --rm frontend npm run build
 
       # ---------------------------------------------------------
-      # 12. AUDITAR DEPENDENCIAS NPM
+      # 13. AUDITAR DEPENDENCIAS NPM
       # ---------------------------------------------------------
 
       - name: Audit frontend dependencies
 
         run: |
-          # Busca vulnerabilidades conocidas
-          # dentro de las dependencias npm.
+          # Busca vulnerabilidades conocidas dentro
+          # de las dependencias npm del frontend.
           docker compose run --rm frontend npm audit
 
       # ---------------------------------------------------------
-      # 13. EJECUTAR TESTS DE LARAVEL
+      # 14. EJECUTAR TESTS DE LARAVEL
       # ---------------------------------------------------------
 
       - name: Run Laravel tests
@@ -248,27 +289,33 @@ jobs:
         run: |
           # Ejecuta toda la suite PHPUnit/Laravel.
           #
-          # Actualmente Wallet App tiene tests para:
-          # autenticación, balances, bolsillos, movimientos,
-          # transferencias, pagos recurrentes y reportes.
+          # Actualmente Wallet App valida, entre otros:
+          #
+          # autenticación
+          # balances
+          # bolsillos
+          # movimientos
+          # transferencias
+          # pagos recurrentes
+          # reportes
           docker compose exec -T api php artisan test
 
       # ---------------------------------------------------------
-      # 14. MOSTRAR ESTADO FINAL DE DOCKER
+      # 15. MOSTRAR ESTADO FINAL DE DOCKER
       # ---------------------------------------------------------
 
       - name: Final Docker status
 
-        # "always()" hace que este step se ejecute incluso
+        # always() hace que este step se ejecute incluso
         # si alguno de los pasos anteriores falla.
         if: always()
 
         run: |
-          # Muy útil para diagnóstico.
+          # Muy útil para diagnosticar fallos del pipeline.
           docker compose ps
 
       # ---------------------------------------------------------
-      # 15. LIMPIAR EL RUNNER
+      # 16. LIMPIAR EL RUNNER
       # ---------------------------------------------------------
 
       - name: Cleanup CI containers
@@ -277,8 +324,10 @@ jobs:
         if: always()
 
         run: |
-          # Detiene y elimina los contenedores creados por CI.
+          # Detiene y elimina los contenedores creados durante CI.
           #
-          # No usamos "-v" porque no necesitamos una eliminación
-          # agresiva de volúmenes como parte normal del flujo.
+          # No utilizamos "down -v".
+          #
+          # No necesitamos una eliminación agresiva de volúmenes
+          # como parte normal de nuestro flujo.
           docker compose down --remove-orphans
