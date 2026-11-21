@@ -55,12 +55,15 @@ export function PocketForm({
     return (
         <form
             onSubmit={(event) => void handleSubmit(event)}
-            className="space-y-5"
+            className="space-y-6"
+            aria-describedby={errorMessage !== null
+                ? 'pocket-form-error'
+                : undefined}
         >
             <div>
                 <label
                     htmlFor="pocket-name"
-                    className="mb-2 block text-sm font-medium text-slate-200"
+                    className="field-label"
                 >
                     Nombre
                 </label>
@@ -70,9 +73,11 @@ export function PocketForm({
                     type="text"
                     required
                     maxLength={100}
+                    autoFocus
+                    disabled={isSubmitting}
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
+                    className="field-control"
                     placeholder="Ej. Ahorros"
                 />
             </div>
@@ -80,7 +85,7 @@ export function PocketForm({
             <div>
                 <label
                     htmlFor="pocket-description"
-                    className="mb-2 block text-sm font-medium text-slate-200"
+                    className="field-label"
                 >
                     Descripción
                 </label>
@@ -89,34 +94,40 @@ export function PocketForm({
                     id="pocket-description"
                     maxLength={500}
                     rows={4}
+                    disabled={isSubmitting}
+                    aria-describedby="pocket-description-count"
                     value={description}
                     onChange={(event) =>
                         setDescription(event.target.value)
                     }
-                    className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-teal-500"
+                    className="field-control min-h-28 resize-y"
                     placeholder="Descripción opcional"
                 />
 
-                <p className="mt-2 text-right text-xs text-slate-500">
+                <p
+                    id="pocket-description-count"
+                    className="field-help text-right tabular-nums"
+                >
                     {description.length}/500
                 </p>
             </div>
 
             {errorMessage !== null && (
                 <p
+                    id="pocket-form-error"
                     role="alert"
-                    className="rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300"
+                    className="status-message status-error"
                 >
                     {errorMessage}
                 </p>
             )}
 
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-3 border-t border-[var(--border)] pt-6 sm:flex-row sm:justify-end">
                 <button
                     type="button"
                     disabled={isSubmitting}
                     onClick={onCancel}
-                    className="rounded-xl border border-slate-700 px-4 py-3 text-sm font-medium transition hover:bg-slate-800 disabled:opacity-60"
+                    className="button button-secondary"
                 >
                     Cancelar
                 </button>
@@ -124,10 +135,10 @@ export function PocketForm({
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="rounded-xl bg-teal-500 px-5 py-3 text-sm font-medium text-slate-950 transition hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="button button-primary"
                 >
                     {isSubmitting
-                        ? 'Guardando...'
+                        ? 'Guardando…'
                         : isEditing
                             ? 'Guardar cambios'
                             : 'Crear bolsillo'}

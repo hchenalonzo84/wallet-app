@@ -36,32 +36,47 @@ export function ConfirmDialog({
             }}
         >
             <AlertDialog.Portal>
-                <AlertDialog.Overlay className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm" />
+                <AlertDialog.Overlay className="dialog-overlay" />
 
-                <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-2xl">
-                    <AlertDialog.Title className="text-xl font-semibold">
-                        {title}
-                    </AlertDialog.Title>
+                <AlertDialog.Content className="dialog-content p-6 sm:p-8">
+                    <div className="flex items-start gap-4">
+                        <span
+                            aria-hidden="true"
+                            className="grid h-10 w-10 shrink-0 place-items-center bg-[var(--danger-soft)] text-lg font-bold text-[var(--danger)]"
+                        >
+                            !
+                        </span>
 
-                    <AlertDialog.Description className="mt-3 text-sm leading-6 text-slate-400">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--danger)]">
+                                Acción sensible
+                            </p>
+
+                            <AlertDialog.Title className="mt-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+                                {title}
+                            </AlertDialog.Title>
+                        </div>
+                    </div>
+
+                    <AlertDialog.Description className="mt-5 text-sm leading-6 text-[var(--text-secondary)]">
                         {description}
                     </AlertDialog.Description>
 
                     {errorMessage !== null && (
                         <p
                             role="alert"
-                            className="mt-5 rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300"
+                            className="status-message status-error mt-5"
                         >
                             {errorMessage}
                         </p>
                     )}
 
-                    <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <div className="mt-7 flex flex-col-reverse gap-3 border-t border-[var(--border)] pt-6 sm:flex-row sm:justify-end">
                         <AlertDialog.Cancel asChild>
                             <button
                                 type="button"
                                 disabled={isProcessing}
-                                className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-medium transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="button button-secondary"
                             >
                                 Cancelar
                             </button>
@@ -71,7 +86,7 @@ export function ConfirmDialog({
                             type="button"
                             disabled={isProcessing}
                             onClick={() => void onConfirm()}
-                            className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="button button-danger"
                         >
                             {isProcessing
                                 ? processingLabel
