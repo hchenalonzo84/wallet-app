@@ -1,0 +1,333 @@
+# Nombre visible del workflow dentro de la pestaña "Actions" de GitHub.
+name: CI
+
+# Define en qué eventos se ejecutará este workflow.
+on:
+
+  # Ejecutar automáticamente cada vez que exista un Pull Request
+  # cuyo destino sea alguna de estas ramas.
+  pull_request:
+    branches:
+      - dev
+      - qa
+      - main
+
+  # También permite ejecutar el workflow manualmente desde:
+  # GitHub > Actions > CI > Run workflow
+  workflow_dispatch:
+
+# Limita los permisos del token automático de GitHub Actions.
+# Este workflow solo necesita leer el repositorio.
+permissions:
+  contents: read
+
+# Evita gastar recursos ejecutando varias versiones antiguas
+# del mismo CI cuando hacemos varios pushes seguidos.
+concurrency:
+
+  # Agrupa las ejecuciones por workflow y referencia Git.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+
+  # Si ya existe una ejecución anterior del mismo grupo,
+  # GitHub la cancela y conserva la más reciente.
+  cancel-in-progress: true
+
+# Variables disponibles durante todo el workflow.
+#
+# IMPORTANTE:
+# Estos valores existen únicamente dentro del runner temporal
+# de GitHub Actions.
+#
+# No corresponden a la base de datos de desarrollo ni producción.
+env:
+
+  # Base de datos temporal utilizada durante CI.
+  POSTGRES_DB: wallet_app_testing
+
+  # Usuario temporal de PostgreSQL.
+  POSTGRES_USER: wallet_app
+
+  # Contraseña temporal.
+  # No es una contraseña real de desarrollo o producción.
+  POSTGRES_PASSWORD: wallet_app_ci
+
+  # Directorio temporal donde Docker guardará PostgreSQL.
+  POSTGRES_DATA_DIR: ./.ci/postgres
+
+  # Variables requeridas por el servicio pgAdmin definido
+  # en compose.yaml, aunque CI no lo utilice directamente.
+  PGADMIN_DEFAULT_EMAIL: ci@example.invalid
+  PGADMIN_DEFAULT_PASSWORD: ci-only
+
+# Los jobs son grupos de trabajo que GitHub Actions ejecuta.
+jobs:
+
+  # Identificador interno del job.
+  validate:
+
+    # Nombre que aparecerá como Check en los Pull Requests.
+    #
+    # Más adelante podremos convertir este Check
+    # en obligatorio antes de permitir un merge.
+    name: CI / Validate
+
+    # GitHub creará una máquina virtual Ubuntu temporal.
+    runs-on: ubuntu-latest
+
+    # Los steps se ejecutan secuencialmente dentro del job.
+    steps:
+
+      # ---------------------------------------------------------
+      # 1. DESCARGAR EL REPOSITORIO
+      # ---------------------------------------------------------
+
+      - name: Checkout repository
+
+        # Acción oficial de GitHub para clonar el repositorio
+        # dentro del runner.
+        uses: actions/checkout@v7
+
+        with:
+
+          # Descarga todo el historial Git.
+          #
+          # Esto permite comparar correctamente los commits
+          # del Pull Request.
+          fetch-depth: 0
+
+      # ---------------------------------------------------------
+      # 2. VERIFICAR ERRORES DE WHITESPACE
+      # ---------------------------------------------------------
+
+      - name: Check changed files for whitespace errors
+
+        # Este step solo tiene sentido cuando el workflow
+        # fue iniciado por un Pull Request.
+        if: github.event_name == 'pull_request'
+
+        run: |
+          # Revisa únicamente la diferencia entre:
+          #
+          # commit base del PR
+          # commit actual de la rama
+          #
+          # Detecta espacios finales, líneas mal formadas, etc.
+          git diff --check \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+
+      # ---------------------------------------------------------
+      # 3. PREPARAR ARCHIVOS DEL ENTORNO CI
+      # ---------------------------------------------------------
+
+      - name: Prepare CI environment
+
+        run: |
+          # Directorio temporal para los datos de PostgreSQL.
+          mkdir -p .ci/postgres
+
+          # Laravel necesita un archivo .env para ejecutarse.
+          #
+          # Tomamos el ejemplo versionado en Git.
+          # No utilizamos secretos reales.
+          cp backend/src/.env.example backend/src/.env
+
+      # ---------------------------------------------------------
+      # 4. CONSTRUIR LAS IMÁGENES DE LA APLICACIÓN
+      # ---------------------------------------------------------
+
+      - name: Build application images
+
+        run: |
+          # Construye las imágenes definidas en compose.yaml
+          # para PHP/Laravel y Node/Vite.
+          #
+          # De esta manera CI utiliza prácticamente
+          # el mismo entorno que desarrollo y producción.
+          docker compose build api frontend
+
+      # ---------------------------------------------------------
+      # 5. INICIAR POSTGRESQL Y LARAVEL
+      # ---------------------------------------------------------
+
+      - name: Start PostgreSQL and Laravel
+
+        run: |
+          # Inicia únicamente los servicios necesarios
+          # para las pruebas de backend.
+          #
+          # El contenedor api ejecutará su entrypoint.
+          # Si vendor/ no existe, ese entrypoint ejecutará
+          # composer install automáticamente.
+          docker compose up -d database api
+
+      # ---------------------------------------------------------
+      # 6. MOSTRAR EL ESTADO INICIAL DE DOCKER
+      # ---------------------------------------------------------
+
+      - name: Show Docker status
+
+        run: |
+          # Ayuda a diagnosticar problemas si algún contenedor
+          # no inició correctamente.
+          docker compose ps
+
+      # ---------------------------------------------------------
+      # 7. ESPERAR A QUE COMPOSER PREPARE LARAVEL
+      # ---------------------------------------------------------
+
+      - name: Wait for Laravel dependencies
+
+        run: |
+          # En un runner nuevo de GitHub Actions no existe vendor/.
+          #
+          # El entrypoint del contenedor api ejecuta composer install
+          # cuando detecta que las dependencias no están preparadas.
+          #
+          # docker compose up -d confirma que el contenedor arrancó,
+          # pero no garantiza que composer install haya terminado.
+          #
+          # Por eso esperamos hasta que vendor/autoload.php exista
+          # antes de ejecutar cualquier comando php artisan.
+          timeout 180 sh -c '
+            until docker compose exec -T api \
+              test -f /var/www/html/vendor/autoload.php
+            do
+              echo "Esperando dependencias Composer..."
+              sleep 3
+            done
+          '
+
+          echo "Laravel y Composer están preparados."
+
+      # ---------------------------------------------------------
+      # 8. GENERAR APP_KEY TEMPORAL
+      # ---------------------------------------------------------
+
+      - name: Generate Laravel application key
+
+        run: |
+          # Laravel necesita APP_KEY.
+          #
+          # Esta clave existe únicamente dentro del runner CI.
+          docker compose exec -T api php artisan key:generate --force
+
+      # ---------------------------------------------------------
+      # 9. PREPARAR LA BASE DE DATOS DE PRUEBAS
+      # ---------------------------------------------------------
+
+      - name: Prepare testing database
+
+        run: |
+          # Ejecuta las migraciones contra PostgreSQL temporal.
+          #
+          # POSTGRES_DB está configurado como:
+          #
+          # wallet_app_testing
+          #
+          # Esta base existe únicamente durante el workflow.
+          #
+          # Esto NO afecta desarrollo ni producción.
+          docker compose exec -T api php artisan migrate --force
+
+      # ---------------------------------------------------------
+      # 10. INSTALAR DEPENDENCIAS DEL FRONTEND
+      # ---------------------------------------------------------
+
+      - name: Install frontend dependencies
+
+        run: |
+          # npm ci instala exactamente las versiones registradas
+          # en package-lock.json.
+          #
+          # Es preferible a npm install dentro de CI porque
+          # proporciona instalaciones reproducibles.
+          docker compose run --rm frontend npm ci
+
+      # ---------------------------------------------------------
+      # 11. VALIDAR TYPESCRIPT
+      # ---------------------------------------------------------
+
+      - name: TypeScript check
+
+        run: |
+          # Comprueba los tipos TypeScript.
+          #
+          # --noEmit evita generar archivos compilados.
+          docker compose run --rm frontend npx tsc --noEmit
+
+      # ---------------------------------------------------------
+      # 12. COMPILAR FRONTEND
+      # ---------------------------------------------------------
+
+      - name: Build frontend
+
+        run: |
+          # Ejecuta el build de producción mediante Vite.
+          #
+          # Esto detecta problemas que podrían no aparecer
+          # durante el servidor de desarrollo.
+          docker compose run --rm frontend npm run build
+
+      # ---------------------------------------------------------
+      # 13. AUDITAR DEPENDENCIAS NPM
+      # ---------------------------------------------------------
+
+      - name: Audit frontend dependencies
+
+        run: |
+          # Busca vulnerabilidades conocidas dentro
+          # de las dependencias npm del frontend.
+          docker compose run --rm frontend npm audit
+
+      # ---------------------------------------------------------
+      # 14. EJECUTAR TESTS DE LARAVEL
+      # ---------------------------------------------------------
+
+      - name: Run Laravel tests
+
+        run: |
+          # Ejecuta toda la suite PHPUnit/Laravel.
+          #
+          # Actualmente Wallet App valida, entre otros:
+          #
+          # autenticación
+          # balances
+          # bolsillos
+          # movimientos
+          # transferencias
+          # pagos recurrentes
+          # reportes
+          docker compose exec -T api php artisan test
+
+      # ---------------------------------------------------------
+      # 15. MOSTRAR ESTADO FINAL DE DOCKER
+      # ---------------------------------------------------------
+
+      - name: Final Docker status
+
+        # always() hace que este step se ejecute incluso
+        # si alguno de los pasos anteriores falla.
+        if: always()
+
+        run: |
+          # Muy útil para diagnosticar fallos del pipeline.
+          docker compose ps
+
+      # ---------------------------------------------------------
+      # 16. LIMPIAR EL RUNNER
+      # ---------------------------------------------------------
+
+      - name: Cleanup CI containers
+
+        # También debe ejecutarse aunque el workflow falle.
+        if: always()
+
+        run: |
+          # Detiene y elimina los contenedores creados durante CI.
+          #
+          # No utilizamos "down -v".
+          #
+          # No necesitamos una eliminación agresiva de volúmenes
+          # como parte normal de nuestro flujo.
+          docker compose down --remove-orphans
