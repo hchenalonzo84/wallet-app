@@ -54,3 +54,13 @@ docker-data/
 *.crt
 *.p12
 *.pfx
+
+# Playwright MCP
+.playwright-mcp/
+baseline-*.png
+review-*.png
+final-*.png
+
+# Python cache
+__pycache__/
+*.py[cod]
